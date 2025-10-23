@@ -17,6 +17,10 @@ contract Deposit {
     mapping(address user => uint256 amount) private s_userFee;
     mapping(address token => bool isAllowed) private s_allowedTokens;
 
+    receive() external payable {
+        s_userFee[msg.sender] += msg.value;
+    }
+
     /// Modifiers ///
     modifier checkZeroAddress(address _tokenAddress) {
         if (_tokenAddress == address(0)) {
