@@ -11,9 +11,12 @@ contract Minter {
     /// Errors ///
     error Minter__ZeroAddress();
     error Minter__ZeroAmount();
+    error Minter__CallerIsNotRouterContract();
 
     /// State Variables ///
     DecentralizedStableCoin private immutable i_dsc;
+
+    address private s_mainRouter;
 
     mapping(address user => uint256 amount) private s_minted;
     mapping(address user => uint256 fee) private s_userFee;
@@ -22,8 +25,9 @@ contract Minter {
     event DSCMinted(address indexed _user, uint256 indexed _amount);
     event DSCBurned(address indexed _user, uint256 indexed _amount);
 
-    constructor() {
+    constructor(address _mainRouter) {
         i_dsc = new DecentralizedStableCoin("DecentralizedStableCoin", "DSC");
+        s_mainRouter = _mainRouter;
     }
 
     receive() external payable {
@@ -45,6 +49,13 @@ contract Minter {
         _;
     }
 
+    modifier onlyMainRouter(address _mainRouter) {
+        if (_mainRouter !== s_mainRouter) {
+            revert Minter__CallerIsNotRouterContract();
+        }
+        _;
+    }
+
     /// Functions ///
 
     /** 
@@ -52,7 +63,7 @@ contract Minter {
      * @param _receiver who wants to mint the DSC to
      * @param _amount of DSC to mint
      */
-    function mint(address _receiver, uint256 _amount) external checkZeroAddress(_receiver) checkZeroAmount(_amount) {
+    function mint(address _receiver, uint256 _amount) external checkZeroAddress(_receiver) checkZeroAmount(_amount) onlyMainRouter(msg.sender) {
         _mint(_receiver, _amount);
     }
 
