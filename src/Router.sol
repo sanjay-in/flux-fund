@@ -3,7 +3,7 @@ pragma solidity ^0.8.27;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {DSC} from "./DSC.sol";
+import {IMinter} from "./interface/IMinter.sol";
 
 contract Router {
     using SafeERC20 for IERC20;
@@ -11,21 +11,25 @@ contract Router {
     error Router__TokenNotSupported();
     error Router__AmountShouldBeMoreThanZero();
 
-    address[] public s_allowedTokenAddresses[];
-    DSC public immutable i_stableCoin; 
+    address[] public s_allowedTokenAddresses;
 
     mapping (address user => mapping (address tokenAdress => uint256 amount)) public s_userDepositAmount;
     mapping (address user => uint256 amount) public s_userMintedStableCoin;
 
+    uint256 private constant LIQUIDATION_THRESHOLD = 80e18; // 80%
+    uint256 private constant LIQUIDATION_PRECISION = 1e20; // 100 => LIQUIDATION_THRESHOLD/LIQUIDATION_PRECISION (80/100)
+    uint256 private constant MINIMUM_HEALTH_FACTOR = 1e18;
+    uint256 private constant PRECISION = 1e18;
+
     event CollateralDeposited(address indexed user, address indexed tokenAddress, uint256 amount);
     event MintedStableCoin(address indexed user, uint256 _amount);
 
-    modifier onlyAllowedTokens(address _token) {
-        if (!s_allowedTokenAddresses[_token]) {
-            revert Router__TokenNotSupported();
-        }
-        _;
-    }
+    // modifier onlyAllowedTokens(address _token) {
+    //     if (s_allowedTokenAddresses[_token]) {
+    //         revert Router__TokenNotSupported();
+    //     }
+    //     _;
+    // }
 
     modifier moreThanZero(uint256 _amount) {
         if (_amount == 0) {
@@ -34,9 +38,8 @@ contract Router {
         _;
     }
 
-    constructor(address[] _tokenAddresses, address _stableCoin) {
+    constructor(address[] memory _tokenAddresses) {
         s_allowedTokenAddresses = _tokenAddresses;
-        i_stableCoin = DSC(_stableCoin);
     }
 
     /**
@@ -45,9 +48,9 @@ contract Router {
      * @param _amountToDeposit amount of collateral the user wants to deposit
      * @param _amountToMint amount of stablecoin user wishes to mint
      */
-    function depositAndMintTokens(address _tokenAddress, uint256 _amountToDeposit, uint256 _amountToMint) external {
+    function depositAndMintTokens(address _tokenAddress, uint256 _amountToDeposit, address _receiver, address _depositor, uint256 _amountToMint) external {
         depositCollateral(_tokenAddress, _amountToDeposit);
-        mintTokens(_amountToMint);
+        _mint(_receiver, _depositor, _amountToMint);
     }
 
     /**
@@ -57,20 +60,43 @@ contract Router {
      * @param _tokenAddress address of the collateral
      * @param _amount amount of collateral the user wants to deposit
      */
-    function depositCollateral(address _tokenAddress, uint256 _amount) public onlyAllowedTokens(_tokenAddress) moreThanZero(_amount) {
+    function depositCollateral(address _tokenAddress, uint256 _amount) public moreThanZero(_amount) {
         s_userDepositAmount[msg.sender][_tokenAddress] += _amount;
         emit CollateralDeposited(msg.sender, _tokenAddress, _amount);
-        IERC20(_tokenAddress).safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     /**
      * @notice This function mints stablecoins if you have enough health factor
      * @param _amountToMint amount of stablecoin user wish wishes to mint
      */
-    function mintTokens(uint256 _amountToMint) public moreThanZero(_amountToMint) {
-        s_userMintedStableCoin[msg.sender] += _amountToMint;
-        emit MintedStableCoin(msg.sender, _amountToMint);
-        // Check health factor
-        i_stableCoin.mint(msg.sender, _amountToMint);
+    function mintTokens(address _receiver, uint256 _amountToMint) public moreThanZero(_amountToMint) {
+       _mint(_receiver, msg.sender, _amountToMint);
+    }
+
+    function getUserDepositedAndMintedTokens(address _user) public view returns(uint256 _deposited, uint256 _minted) {
+        _deposited = getUserOverallCollateralValue(_user);
+        _minted = getUserOverallMinted(_user);
+    }
+
+    function getUserOverallCollateralValue(address _user) public view returns(uint256) {
+
+    }
+
+    function getUserOverallMinted(address _user) public view returns(uint256) {
+        return s_minted[_user];
+    }
+
+    function _mint(address _receiver, address _sender, uint256 _amount) internal {
+        s_userMintedStableCoin[_sender] += _amount;
+        IMinter(_receiver).mint(_sender, _amount);
+    }
+
+    function _getHealthFactor(address _user) internal returns(uint256) {
+
+    }
+
+    function _calculateHealthFactor(uint256 _totalValueDeposited, uint256 _totalValueMinted) internal returns (uint256) {
+        uint256 _amount =  (_totalValueDeposited * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        return ( _amount * PRECISION ) / _totalValueMinted;
     }
 }
