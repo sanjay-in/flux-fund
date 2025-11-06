@@ -50,7 +50,7 @@ contract Minter {
     }
 
     modifier onlyMainRouter(address _mainRouter) {
-        if (_mainRouter !== s_mainRouter) {
+        if (_mainRouter != s_mainRouter) {
             revert Minter__CallerIsNotRouterContract();
         }
         _;

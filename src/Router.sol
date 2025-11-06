@@ -91,7 +91,7 @@ contract Router is Ownable {
 
     function removeAllowedToken(address _tokenAddress) external onlyAllowedTokens(_tokenAddress) onlyOwner {
         s_isTokenAllowed[_tokenAddress] = false;
-        s_priceFeeds[_tokenAddress] = 0;
+        s_priceFeeds[_tokenAddress] = address(0);
     }
 
     function changePriceFeed(address _tokenAddress, address _priceFeed) external onlyAllowedTokens(_tokenAddress) onlyOwner {
@@ -108,7 +108,7 @@ contract Router is Ownable {
     }
 
     function getUserOverallMinted(address _user) public view returns(uint256) {
-        return s_minted[_user];
+        // return s_minted[_user];
     }
 
     function _mint(address _receiver, address _sender, uint256 _amount) internal {
@@ -120,13 +120,13 @@ contract Router is Ownable {
 
     }
 
-    function _getUSDValue(address _token, uint256 _amount) internal view returns(int256) {
+    function _getUSDValue(address _token, uint256 _amount) internal view returns(uint256) {
         AggregatorV3Interface chainlinkFeed = AggregatorV3Interface(s_priceFeeds[_token]);
         (,int256 price,,,) = chainlinkFeed.getLatestRoundData();
         return ((uint256(price) * ADDITIONAL_FEE_PRECISION) * _amount) / PRECISION;
     }
 
-    function _calculateHealthFactor(uint256 _totalValueDeposited, uint256 _totalValueMinted) internal returns (uint256) {
+    function _calculateHealthFactor(uint256 _totalValueDeposited, uint256 _totalValueMinted) internal pure returns (uint256) {
         uint256 _amount =  (_totalValueDeposited * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
         return ( _amount * PRECISION ) / _totalValueMinted;
     }

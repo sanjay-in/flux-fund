@@ -8,7 +8,7 @@ library OracleLib {
 
     uint256 private constant TIMEOUT = 3 hours;
 
-    function getLatestRoundData(AggregatorV3Interface chainlinkFeed) external returns(uint80, int256, uint256, uint256, uint80) {
+    function getLatestRoundData(AggregatorV3Interface chainlinkFeed) external view returns(uint80, int256, uint256, uint256, uint80) {
         (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) = chainlinkFeed.latestRoundData();
 
         // Checks if last updated is 0 || last round answer less than roundId || last updated is more than 3 hours
@@ -20,6 +20,6 @@ library OracleLib {
     }
 
     function getTimeout() external pure returns (uint256) {
-        returns TIMEOUT;
+        return TIMEOUT;
     }
 }
