@@ -3,10 +3,11 @@ pragma solidity ^0.8.27;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AggregatorV3Interface, OracleLib} from "./library/OracleLib.sol";
 import {IMinter} from "./interface/IMinter.sol";
 
-contract Router {
+contract Router is Ownable {
     using SafeERC20 for IERC20;
     using OracleLib for AggregatorV3Interface;
 
@@ -45,7 +46,7 @@ contract Router {
         _;
     }
 
-    constructor(address[] memory _tokenAddresses) {
+    constructor(address[] memory _tokenAddresses) Ownable(msg.sender) {
         s_allowedTokenAddresses = _tokenAddresses;
     }
 
@@ -80,7 +81,7 @@ contract Router {
        _mint(_receiver, msg.sender, _amountToMint);
     }
 
-    function addTokens(address _tokenAddress, address _priceFeedAddress) external {
+    function addTokens(address _tokenAddress, address _priceFeedAddress) external onlyOwner {
         if (s_isTokenAllowed[_tokenAddress]) {
             revert Router__TokenAlreadyExist();
         }
@@ -88,12 +89,12 @@ contract Router {
         s_priceFeeds[_tokenAddress] = _priceFeedAddress;
     }
 
-    function removeAllowedToken(address _tokenAddress) external onlyAllowedTokens(_tokenAddress) {
+    function removeAllowedToken(address _tokenAddress) external onlyAllowedTokens(_tokenAddress) onlyOwner {
         s_isTokenAllowed[_tokenAddress] = false;
         s_priceFeeds[_tokenAddress] = 0;
     }
 
-    function changePriceFeed(address _tokenAddress, address _priceFeed) external onlyAllowedTokens(_tokenAddress) {
+    function changePriceFeed(address _tokenAddress, address _priceFeed) external onlyAllowedTokens(_tokenAddress) onlyOwner {
         s_priceFeeds[_tokenAddress] = _priceFeed;
     }
 
