@@ -3,33 +3,40 @@ pragma solidity ^0.8.27;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {AggregatorV3Interface, OracleLib} from "./library/OracleLib.sol";
 import {IMinter} from "./interface/IMinter.sol";
 
 contract Router {
     using SafeERC20 for IERC20;
+    using OracleLib for AggregatorV3Interface;
 
     error Router__TokenNotSupported();
     error Router__AmountShouldBeMoreThanZero();
+    error Router__TokenAlreadyExist();
 
     address[] public s_allowedTokenAddresses;
 
     mapping (address user => mapping (address tokenAdress => uint256 amount)) public s_userDepositAmount;
     mapping (address user => uint256 amount) public s_userMintedStableCoin;
 
+    mapping (address tokenAddress => bool active) public s_isTokenAllowed;
+    mapping (address collateralToken => address priceFeed) public s_priceFeeds;
+
     uint256 private constant LIQUIDATION_THRESHOLD = 80e18; // 80%
     uint256 private constant LIQUIDATION_PRECISION = 1e20; // 100 => LIQUIDATION_THRESHOLD/LIQUIDATION_PRECISION (80/100)
     uint256 private constant MINIMUM_HEALTH_FACTOR = 1e18;
+    uint256 private constant ADDITIONAL_FEE_PRECISION = 1e10;
     uint256 private constant PRECISION = 1e18;
 
     event CollateralDeposited(address indexed user, address indexed tokenAddress, uint256 amount);
     event MintedStableCoin(address indexed user, uint256 _amount);
 
-    // modifier onlyAllowedTokens(address _token) {
-    //     if (s_allowedTokenAddresses[_token]) {
-    //         revert Router__TokenNotSupported();
-    //     }
-    //     _;
-    // }
+    modifier onlyAllowedTokens(address _token) {
+        if (!s_isTokenAllowed[_token]) {
+            revert Router__TokenNotSupported();
+        }
+        _;
+    }
 
     modifier moreThanZero(uint256 _amount) {
         if (_amount == 0) {
@@ -73,6 +80,23 @@ contract Router {
        _mint(_receiver, msg.sender, _amountToMint);
     }
 
+    function addTokens(address _tokenAddress, address _priceFeedAddress) external {
+        if (s_isTokenAllowed[_tokenAddress]) {
+            revert Router__TokenAlreadyExist();
+        }
+        s_isTokenAllowed[_tokenAddress] = true;
+        s_priceFeeds[_tokenAddress] = _priceFeedAddress;
+    }
+
+    function removeAllowedToken(address _tokenAddress) external onlyAllowedTokens(_tokenAddress) {
+        s_isTokenAllowed[_tokenAddress] = false;
+        s_priceFeeds[_tokenAddress] = 0;
+    }
+
+    function changePriceFeed(address _tokenAddress, address _priceFeed) external onlyAllowedTokens(_tokenAddress) {
+        s_priceFeeds[_tokenAddress] = _priceFeed;
+    }
+
     function getUserDepositedAndMintedTokens(address _user) public view returns(uint256 _deposited, uint256 _minted) {
         _deposited = getUserOverallCollateralValue(_user);
         _minted = getUserOverallMinted(_user);
@@ -93,6 +117,12 @@ contract Router {
 
     function _getHealthFactor(address _user) internal returns(uint256) {
 
+    }
+
+    function _getUSDValue(address _token, uint256 _amount) internal view returns(int256) {
+        AggregatorV3Interface chainlinkFeed = AggregatorV3Interface(s_priceFeeds[_token]);
+        (,int256 price,,,) = chainlinkFeed.getLatestRoundData();
+        return ((uint256(price) * ADDITIONAL_FEE_PRECISION) * _amount) / PRECISION;
     }
 
     function _calculateHealthFactor(uint256 _totalValueDeposited, uint256 _totalValueMinted) internal returns (uint256) {
