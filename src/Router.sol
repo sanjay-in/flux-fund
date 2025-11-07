@@ -125,15 +125,14 @@ contract Router is Ownable {
     }
 
     /**
-     * @notice Calculates the health factor of the user
+     * @notice Gets the total collateral value in USD and total DSC minted and calls calculate health factor function
      * @param _user address to check health factor
      * @return healthFactor with precision
      */
     function _getHealthFactor(address _user) internal view returns(uint256 healthFactor) {
         uint256 _userCollateral = getUserOverallCollateralValue(_user);
         uint256 _userMinted = getUserOverallMinted(_user);
-        healthFactor = (_userCollateral * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
-        healthFactor = (healthFactor * PRECISION) / _userMinted;
+        healthFactor = _calculateHealthFactor(_userCollateral, _userMinted);
     }
 
     function _getUSDValue(address _token, uint256 _amount) internal view returns(uint256) {
@@ -142,7 +141,18 @@ contract Router is Ownable {
         return ((uint256(price) * ADDITIONAL_FEE_PRECISION) * _amount) / PRECISION;
     }
 
+    /**
+     * @notice Calculates the health factor of the user
+     * @param _totalValueDeposited All collateral deposited value in USD
+     * @param _totalValueMinted total minted tokens
+     */
     function _calculateHealthFactor(uint256 _totalValueDeposited, uint256 _totalValueMinted) internal pure returns (uint256) {
+
+        // Formula for health factor: Total Deposited Collateral × Liquidation Threshold / Total Borrowed DSC 
+        // Ex: $1000 collateral deposited with threshold of 80%, Minted DSC worth $800
+        // ( 1000e18 * 80e18 ) / 1e20 => 8e20  Liquidation Threshold 80% = deposited * 80/100 => 80e18/1e20
+        // (8e20 * 1e18 ) / 800e18 => 1e18
+        
         uint256 _amount =  (_totalValueDeposited * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
         return ( _amount * PRECISION ) / _totalValueMinted;
     }
