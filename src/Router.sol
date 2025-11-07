@@ -87,6 +87,7 @@ contract Router is Ownable {
         }
         s_isTokenAllowed[_tokenAddress] = true;
         s_priceFeeds[_tokenAddress] = _priceFeedAddress;
+        s_allowedTokenAddresses.push(_tokenAddress);
     }
 
     function removeAllowedToken(address _tokenAddress) external onlyAllowedTokens(_tokenAddress) onlyOwner {
@@ -103,12 +104,19 @@ contract Router is Ownable {
         _minted = getUserOverallMinted(_user);
     }
 
-    function getUserOverallCollateralValue(address _user) public view returns(uint256) {
-
+    function getUserOverallCollateralValue(address _user) public view returns(uint256 totalAmount) {
+        uint256 _tokenLength = s_allowedTokenAddresses.length;
+        for (uint256 i = 0; i < _tokenLength; i++) {
+            uint256 _tokenAddress = s_allowedTokenAddresses[i];
+            uint256 _userAmount = s_userDepositAmount[_user][_tokenAddress];
+            if (_userAmount) {
+                totalAmount += _getUSDValue(_tokenAddress, _userAmount);
+            }
+        }
     }
 
     function getUserOverallMinted(address _user) public view returns(uint256) {
-        // return s_minted[_user];
+        return s_userMintedStableCoin[_user];
     }
 
     function _mint(address _receiver, address _sender, uint256 _amount) internal {
@@ -116,8 +124,16 @@ contract Router is Ownable {
         IMinter(_receiver).mint(_sender, _amount);
     }
 
-    function _getHealthFactor(address _user) internal returns(uint256) {
-
+    /**
+     * @notice Calculates the health factor of the user
+     * @param _user address to check health factor
+     * @return healthFactor with precision
+     */
+    function _getHealthFactor(address _user) internal view returns(uint256 healthFactor) {
+        uint256 _userCollateral = getUserOverallCollateralValue(_user);
+        uint256 _userMinted = getUserOverallMinted(_user);
+        healthFactor = (_userCollateral * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        healthFactor = (healthFactor * PRECISION) / _userMinted;
     }
 
     function _getUSDValue(address _token, uint256 _amount) internal view returns(uint256) {
