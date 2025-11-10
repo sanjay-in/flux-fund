@@ -14,6 +14,7 @@ contract Router is Ownable {
     error Router__TokenNotSupported();
     error Router__AmountShouldBeMoreThanZero();
     error Router__TokenAlreadyExist();
+    error Router__HealthFactorAboveDesiredLimit();
 
     address[] public s_allowedTokenAddresses;
 
@@ -31,6 +32,7 @@ contract Router is Ownable {
 
     event CollateralDeposited(address indexed user, address indexed tokenAddress, uint256 amount);
     event MintedStableCoin(address indexed user, uint256 _amount);
+    event Burned(address indexed user, uint256 amount);
 
     modifier onlyAllowedTokens(address _token) {
         if (!s_isTokenAllowed[_token]) {
@@ -95,6 +97,10 @@ contract Router is Ownable {
         s_priceFeeds[_tokenAddress] = address(0);
     }
 
+    function liquidate(address _userToLiquidate, address _receiver, address _token, uint256 _amount) external {
+        _liquidate(_userToLiquidate, _receiver, _token, _amount);
+    }
+
     function changePriceFeed(address _tokenAddress, address _priceFeed) external onlyAllowedTokens(_tokenAddress) onlyOwner {
         s_priceFeeds[_tokenAddress] = _priceFeed;
     }
@@ -122,6 +128,24 @@ contract Router is Ownable {
     function _mint(address _receiver, address _sender, uint256 _amount) internal {
         s_userMintedStableCoin[_sender] += _amount;
         IMinter(_receiver).mint(_sender, _amount);
+    }
+
+    function _liquidate(address _userToLiquidate, address _receiver, address _token, uint256 _amount) internal {
+        _burn(_userToLiquidate, _amount);
+        _redeem(_userToLiquidate, _receiver, _token, _amount);
+    }
+
+    function _burn(address _user, uint256 _amount) internal moreThanZero(_amount) {
+        s_minted[_user] -= _amount;
+        emit Burned(_user, _amount);
+    }
+
+    function _redeem(address _user, address _receiver, address _token, uint256 _amount) internal moreThanZero(_amount) {
+        if (_getHealthFactor(_user) >= MINIMUM_HEALTH_FACTOR) {
+            revert Router__HealthFactorAboveDesiredLimit();
+        }
+        s_userDepositAmount[_user][_token] -= _amount;
+        IDepositor(_receiver).redeem(_user, );
     }
 
     /**
@@ -152,7 +176,7 @@ contract Router is Ownable {
         // Ex: $1000 collateral deposited with threshold of 80%, Minted DSC worth $800
         // ( 1000e18 * 80e18 ) / 1e20 => 8e20  Liquidation Threshold 80% = deposited * 80/100 => 80e18/1e20
         // (8e20 * 1e18 ) / 800e18 => 1e18
-        
+
         uint256 _amount =  (_totalValueDeposited * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
         return ( _amount * PRECISION ) / _totalValueMinted;
     }
