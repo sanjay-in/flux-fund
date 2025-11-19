@@ -81,11 +81,11 @@ contract Deposit is Ownable {
     function depositAndMint(address _tokenAddress, uint256 _amount, address _receiverContract, address _to, uint256 _amountToMint) 
         external 
         payable 
-        onlyAllowedTokens(_tokenAddress) 
+        checkAllowedTokens(_tokenAddress) 
     {
         s_userFee[msg.sender] += msg.value;
         _deposit(_tokenAddress, _amount);
-        IRouter(mainRouter).depositAndMintTokens(_tokenAddress, _amount, _receiver, _to, _amountToMint);
+        IRouter(s_mainRouter).depositAndMintTokens(_tokenAddress, _amount, _receiverContract, _to, _amountToMint);
     }
 
     /**
@@ -150,21 +150,21 @@ contract Deposit is Ownable {
     /// Setter Functions ///
 
     /**
-     * Sets a particular token to be allowed or restriced
+     * @notice Sets a particular token to be allowed or restriced
      * Only owner can update the token
      * @param _tokenAddress address of the token
      * @param _isAllowed set if the token is allowed or restricted
      */
-    function setAllowedTokens(address _tokenAddress, bool _isAllowed) external onlyOwner(msg.sender) {
+    function setAllowedTokens(address _tokenAddress, bool _isAllowed) external onlyOwner {
         s_allowedTokens[_tokenAddress] = _isAllowed;
     }
 
     /**
-     * Sets the main router address
+     * @notice Sets the main router address
      * Only owner can set the address
      * @param _routerAddress address of the main router
      */
-    function setMainRouterAddress(address _routerAddress) external onlyOwner(msg.sender) {
-        s_mainRouter = _routerAddress
+    function setMainRouterAddress(address _routerAddress) external onlyOwner {
+        s_mainRouter = _routerAddress;
     }
 }

@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AggregatorV3Interface, OracleLib} from "./library/OracleLib.sol";
+import {IDepositor} from "./interface/IDepositor.sol";
 import {IMinter} from "./interface/IMinter.sol";
 
 contract Router is Ownable {
@@ -26,6 +27,7 @@ contract Router is Ownable {
 
     uint256 private constant LIQUIDATION_THRESHOLD = 80e18; // 80%
     uint256 private constant LIQUIDATION_PRECISION = 1e20; // 100 => LIQUIDATION_THRESHOLD/LIQUIDATION_PRECISION (80/100)
+    uint256 private constant LIQUIDATION_BONUS = 10e18;
     uint256 private constant MINIMUM_HEALTH_FACTOR = 1e18;
     uint256 private constant ADDITIONAL_FEE_PRECISION = 1e10;
     uint256 private constant PRECISION = 1e18;
@@ -56,31 +58,33 @@ contract Router is Ownable {
      * @notice This is an exernal function that deposits collateral and mints stable coin in one transaction
      * @param _tokenAddress address of the collateral
      * @param _amountToDeposit amount of collateral the user wants to deposit
+     * @param _receiver address of the minter contract
+     * @param _to address to mint the tokens to
      * @param _amountToMint amount of stablecoin user wishes to mint
      */
-    function depositAndMintTokens(address _tokenAddress, uint256 _amountToDeposit, address _receiver, address _depositor, uint256 _amountToMint) external {
-        depositCollateral(_tokenAddress, _amountToDeposit);
-        _mint(_receiver, _depositor, _amountToMint);
+    function depositAndMintTokens(address _tokenAddress, uint256 _amountToDeposit, address _receiver, address _to, uint256 _amountToMint) external {
+        _depositCollateral(_to, _tokenAddress, _amountToDeposit);
+        _mint(_receiver, _to, _amountToMint);
     }
 
     /**
      * @notice Deposits collateral into the protocol
      * Checks if the collateral is supported
      * Checks if the collateral value is more than zero
+     * @param _depositor address of the depositor
      * @param _tokenAddress address of the collateral
      * @param _amount amount of collateral the user wants to deposit
      */
-    function depositCollateral(address _tokenAddress, uint256 _amount) public moreThanZero(_amount) {
-        s_userDepositAmount[msg.sender][_tokenAddress] += _amount;
-        emit CollateralDeposited(msg.sender, _tokenAddress, _amount);
+    function depositCollateral(address _depositor, address _tokenAddress, uint256 _amount) external moreThanZero(_amount) {
+        _depositCollateral(_depositor, _tokenAddress, _amount);
     }
 
     /**
      * @notice This function mints stablecoins if you have enough health factor
      * @param _amountToMint amount of stablecoin user wish wishes to mint
      */
-    function mintTokens(address _receiver, uint256 _amountToMint) public moreThanZero(_amountToMint) {
-       _mint(_receiver, msg.sender, _amountToMint);
+    function mintTokens(address _receiver, address _to, uint256 _amountToMint) public moreThanZero(_amountToMint) {
+       _mint(_receiver, _to, _amountToMint);
     }
 
     function addTokens(address _tokenAddress, address _priceFeedAddress) external onlyOwner {
@@ -97,8 +101,8 @@ contract Router is Ownable {
         s_priceFeeds[_tokenAddress] = address(0);
     }
 
-    function liquidate(address _userToLiquidate, address _receiver, address _token, uint256 _amount) external {
-        _liquidate(_userToLiquidate, _receiver, _token, _amount);
+    function liquidate(address _userToLiquidate, address _receiver, address _token, uint256 _amount, address _sender) external {
+        _liquidate(_userToLiquidate, _receiver, _token, _amount, _sender);
     }
 
     function changePriceFeed(address _tokenAddress, address _priceFeed) external onlyAllowedTokens(_tokenAddress) onlyOwner {
@@ -113,9 +117,9 @@ contract Router is Ownable {
     function getUserOverallCollateralValue(address _user) public view returns(uint256 totalAmount) {
         uint256 _tokenLength = s_allowedTokenAddresses.length;
         for (uint256 i = 0; i < _tokenLength; i++) {
-            uint256 _tokenAddress = s_allowedTokenAddresses[i];
+            address _tokenAddress = s_allowedTokenAddresses[i];
             uint256 _userAmount = s_userDepositAmount[_user][_tokenAddress];
-            if (_userAmount) {
+            if (_userAmount != 0) {
                 totalAmount += _getUSDValue(_tokenAddress, _userAmount);
             }
         }
@@ -125,27 +129,38 @@ contract Router is Ownable {
         return s_userMintedStableCoin[_user];
     }
 
+    function _depositCollateral(address _depositor, address _tokenAddress, uint256 _amount) internal {
+        s_userDepositAmount[_depositor][_tokenAddress] += _amount;
+        emit CollateralDeposited(msg.sender, _tokenAddress, _amount);
+    }
+
     function _mint(address _receiver, address _sender, uint256 _amount) internal {
         s_userMintedStableCoin[_sender] += _amount;
         IMinter(_receiver).mint(_sender, _amount);
     }
 
-    function _liquidate(address _userToLiquidate, address _receiver, address _token, uint256 _amount) internal {
-        _burn(_userToLiquidate, _amount);
-        _redeem(_userToLiquidate, _receiver, _token, _amount);
+    function _liquidate(address _userToLiquidate, address _receiver, address _token, uint256 _amountOfDSC, address _sender) internal {
+        if (_getHealthFactor(_userToLiquidate) >= MINIMUM_HEALTH_FACTOR) {
+            revert Router__HealthFactorAboveDesiredLimit();
+        }
+        // Get amount of tokens to redeem for a token address by converting the DSC (USD value) to amount of tokens
+        uint256 amountOfTokens = _convertTokenAmountFromDSC(_token, _amountOfDSC);
+        uint256 amountOfTokensToRedeem = amountOfTokens + (amountOfTokens * LIQUIDATION_BONUS / LIQUIDATION_PRECISION);
+        _burn(_sender, _amountOfDSC);
+        _redeem(_userToLiquidate, _sender, _receiver, _token, amountOfTokensToRedeem);
     }
 
     function _burn(address _user, uint256 _amount) internal moreThanZero(_amount) {
-        s_minted[_user] -= _amount;
+        s_userMintedStableCoin[_user] -= _amount;
         emit Burned(_user, _amount);
     }
 
-    function _redeem(address _user, address _receiver, address _token, uint256 _amount) internal moreThanZero(_amount) {
+    function _redeem(address _user, address _to, address _receiver, address _token, uint256 _amount) internal moreThanZero(_amount) {
         if (_getHealthFactor(_user) >= MINIMUM_HEALTH_FACTOR) {
             revert Router__HealthFactorAboveDesiredLimit();
         }
         s_userDepositAmount[_user][_token] -= _amount;
-        IDepositor(_receiver).redeem(_user, );
+        IDepositor(_receiver).redeem(_user, _to, _token, _amount);
     }
 
     /**
@@ -163,6 +178,12 @@ contract Router is Ownable {
         AggregatorV3Interface chainlinkFeed = AggregatorV3Interface(s_priceFeeds[_token]);
         (,int256 price,,,) = chainlinkFeed.getLatestRoundData();
         return ((uint256(price) * ADDITIONAL_FEE_PRECISION) * _amount) / PRECISION;
+    }
+
+    function _convertTokenAmountFromDSC(address _token, uint256 _amount) internal view returns (uint256) {
+        AggregatorV3Interface chainlinkFeed = AggregatorV3Interface(s_priceFeeds[_token]);
+        (,int256 price,,,) = chainlinkFeed.getLatestRoundData();
+        return (_amount * PRECISION / (uint256(price) * ADDITIONAL_FEE_PRECISION));
     }
 
     /**
