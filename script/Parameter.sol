@@ -1,0 +1,88 @@
+// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+pragma solidity ^0.8.27;
+
+contract Parameter {
+    //--------------- ARBITRUM SEPOLIA ADDRESSES ---------------//
+
+    // Token Addressses
+    address public constant ARBITRUM_SEPOLIA_WBTC_TOKEN_ADDRESS = 0x1EBb831953f57dB849753d27CC53492b39ee6D0f;
+    address public constant ARBITRUM_SEPOLIA_WETH_TOKEN_ADDRESS = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
+    address public constant ARBITRUM_SEPOLIA_LINK_TOKEN_ADDRESS = 0xb1D4538B4571d411F07960EF2838Ce337FE1E80E;
+
+    // Pricefeed Addresses
+    address public constant ARBITRUM_SEPOLIA_WBTC_PRICEFEED_ADDRESS = 0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69;
+    address public constant ARBITRUM_SEPOLIA_WETH_PRICEFEED_ADDRESS = 0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165;
+    address public constant ARBITRUM_SEPOLIA_LINK_PRICEFEED_ADDRESS = 0x0FB99723Aee6f420beAD13e6bBB79b7E6F034298;
+
+    //--------------- AVALANCHE FUJI ADDRESSES ---------------//
+
+    // Token Addressses
+    address public constant AVALANCHE_FUJI_WBTC_TOKEN_ADDRESS = 0x0f2071079315Ba5a1c6d5b532a01a132c157AC83;
+    address public constant AVALANCHE_FUJI_WETH_TOKEN_ADDRESS = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
+    address public constant AVALANCHE_FUJI_LINK_TOKEN_ADDRESS = 0xb3B3CbEd8243682845C2ff23Ea1FD48e6144E34F;
+
+    // Pricefeed Addresses
+    address public constant AVALANCHE_FUJI_WBTC_PRICEFEED_ADDRESS = 0x31CF013A08c6Ac228C94551d535d5BAfE19c602a;
+    address public constant AVALANCHE_FUJI_WETH_PRICEFEED_ADDRESS = 0x86d67c3D38D2bCeE722E601025C25a575021c6EA;
+    address public constant AVALANCHE_FUJI_LINK_PRICEFEED_ADDRESS = 0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470;
+
+    //--------------- BASE SEPOLIA ADDRESSES ---------------//
+
+    // Token Addressses
+    address public constant BASE_SEPOLIA_WBTC_TOKEN_ADDRESS = 0x770028722531E1A4219044dAAc2e20FE42aD821c;
+    address public constant BASE_SEPOLIA_WETH_TOKEN_ADDRESS = 0xF420213565E317c2140a7C934b8e1d31C1088888;
+    address public constant BASE_SEPOLIA_LINK_TOKEN_ADDRESS = 0x779877A7B0D9E8603169DdbD7836e478b4624789;
+
+    // Pricefeed Addresses
+    address public constant BASE_SEPOLIA_WBTC_PRICEFEED_ADDRESS = 0x0FB99723Aee6f420beAD13e6bBB79b7E6F034298;
+    address public constant BASE_SEPOLIA_WETH_PRICEFEED_ADDRESS = 0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1;
+    address public constant BASE_SEPOLIA_LINK_PRICEFEED_ADDRESS = 0xb113F5A928BCfF189C998ab20d753a47F9dE5A61;
+
+    //--------------- ETHEREUM SEPOLIA ADDRESSES ---------------//
+
+    // Token Addressses
+    address public constant ETH_SEPOLIA_WBTC_TOKEN_ADDRESS = 0x92f3B59a79bFf5dc60c0d59eA13a44D082B2bdFC;
+    address public constant ETH_SEPOLIA_WETH_TOKEN_ADDRESS = 0xf53138b1f486B245a49c90F230d40212E8489c79;
+    address public constant ETH_SEPOLIA_LINK_TOKEN_ADDRESS = 0x779877A7B0D9E8603169DdbD7836e478b4624789;
+
+    // Pricefeed Addresses
+    address public constant ETH_SEPOLIA_WBTC_PRICEFEED_ADDRESS = 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43;
+    address public constant ETH_SEPOLIA_WETH_PRICEFEED_ADDRESS = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
+    address public constant ETH_SEPOLIA_LINK_PRICEFEED_ADDRESS = 0xc59E3633BAAC79493d908e63626716e204A45EdF;
+
+    //--------------- POLYGON AMOY ADDRESSES ---------------//
+
+    // Token Addressses
+    address public constant POLYGON_AMOY_WBTC_TOKEN_ADDRESS = 0xacA9d522f876cB50ABc57FF1BEed1d3FaaDF0642;
+    address public constant POLYGON_AMOY_WETH_TOKEN_ADDRESS = 0x41Dc3C8eB8368bd9139Cec50434a0C294c8c1102;
+    address public constant POLYGON_AMOY_LINK_TOKEN_ADDRESS = 0x0f2071079315Ba5a1c6d5b532a01a132c157AC83;
+
+    // Pricefeed Addresses
+    address public constant POLYGON_AMOY_WBTC_PRICEFEED_ADDRESS = 0xe7656e23fE8077D438aEfbec2fAbDf2D8e070C4f;
+    address public constant POLYGON_AMOY_WETH_PRICEFEED_ADDRESS = 0xF0d50568e3A7e8259E16663972b11910F89BD8e7;
+    address public constant POLYGON_AMOY_LINK_PRICEFEED_ADDRESS = 0xc2e2848e28B9fE430Ab44F55a8437a33802a219C;
+
+    //--------------- ZKSYNC SEPOLIA ADDRESSES ---------------//
+
+    // Token Addressses
+    address public constant ZKSYNC_SEPOLIA_WBTC_TOKEN_ADDRESS = 0xB3A1FfcAb3554642b8F207c19D07D949De4bF351;
+    address public constant ZKSYNC_SEPOLIA_WETH_TOKEN_ADDRESS = 0x5f207d42F869fd1c71d7f0f81a2A67Fc20FF7323;
+    address public constant ZKSYNC_SEPOLIA_LINK_TOKEN_ADDRESS = 0x0f2071079315Ba5a1c6d5b532a01a132c157AC83;
+
+    // Pricefeed Addresses
+    address public constant ZKSYNC_SEPOLIA_WBTC_PRICEFEED_ADDRESS = 0x95Bc57e794aeb02E4a16eff406147f3ce2531F83;
+    address public constant ZKSYNC_SEPOLIA_WETH_PRICEFEED_ADDRESS = 0xfEefF7c3fB57d18C5C6Cdd71e45D2D0b4F9377bF;
+    address public constant ZKSYNC_SEPOLIA_LINK_PRICEFEED_ADDRESS = 0x894423C43cD7230Cd22a47B329E96097e6355292;
+
+    //--------------- ANVIL ADDRESSES ---------------//
+
+    // Token Addressses
+    // address public constant AVALANCHE_FUJI_WBTC_TOKEN_ADDRESS = ;
+    // address public constant AVALANCHE_FUJI_WETH_TOKEN_ADDRESS = ;
+    // address public constant AVALANCHE_FUJI_LINK_TOKEN_ADDRESS = ;
+
+    // // Pricefeed Addresses
+    // address public constant AVALANCHE_FUJI_WBTC_PRICEFEED_ADDRESS = ;
+    // address public constant AVALANCHE_FUJI_WETH_PRICEFEED_ADDRESS = ;
+    // address public constant AVALANCHE_FUJI_LINK_PRICEFEED_ADDRESS = ;
+}
