@@ -50,8 +50,11 @@ contract Router is Ownable {
         _;
     }
 
-    constructor(address[] memory _tokenAddresses) Ownable(msg.sender) {
+    constructor(address[] memory _tokenAddresses, address[] memory _priceFeedAddresses) Ownable(msg.sender) {
         s_allowedTokenAddresses = _tokenAddresses;
+        for (uint64 i = 0; i < s_allowedTokenAddresses.length; i++) {
+            s_priceFeeds[s_allowedTokenAddresses[i]] = _priceFeedAddresses[i];
+        }
     }
 
     /**
