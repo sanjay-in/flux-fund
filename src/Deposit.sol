@@ -45,7 +45,7 @@ contract Deposit is Ownable {
     }
 
     modifier checkAllowedTokens(address _tokenAddress) {
-        if (!s_allowedTokens[_tokenAddress]) {
+        if (s_allowedTokens[_tokenAddress] == false) {
             revert Deposit__TokenNotAllowed(_tokenAddress);
         }
         _;
@@ -122,16 +122,25 @@ contract Deposit is Ownable {
      * @param _token address of the token
      * @return Amount of token deposited
      */
-    function getUserTokenValue(address _token) external view returns (uint256) {
+    function getUserTokenAmount(address _token) external view returns (uint256) {
         return s_userDeposited[msg.sender][_token];
     }
 
     /**
      * @notice Returns how much user has paid in fees
-     * @return uint256 
+     * @return uint256 ETH amount spent by the user
      */
     function getUserFeeValue() external view returns (uint256) {
         return s_userFee[msg.sender];
+    }
+
+    /**
+     * @notice Returns how much user has paid in fees
+     * @param _user address of the user
+     * @return uint256 ETH amount spent by the user
+     */
+    function getFeeValue(address _user) external view returns (uint256) {
+        return s_userFee[_user];
     }
 
     /**
@@ -155,7 +164,7 @@ contract Deposit is Ownable {
      * @param _tokenAddress address of the token
      * @param _isAllowed set if the token is allowed or restricted
      */
-    function setAllowedTokens(address _tokenAddress, bool _isAllowed) external onlyOwner {
+    function setAllowedTokens(address _tokenAddress, bool _isAllowed) external onlyOwner checkZeroAddress(_tokenAddress) {
         s_allowedTokens[_tokenAddress] = _isAllowed;
     }
 
