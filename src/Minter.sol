@@ -153,6 +153,14 @@ contract Minter is Ownable {
         return s_userFee[_user];
     }
 
+    /**
+     * @notice Gets DSC contract
+     * @return DecentralizedStableCoin
+     */
+    function getDecentralizedStableCoin() external view returns (DecentralizedStableCoin) {
+        return i_dsc;
+    }
+
 
     /// Setter Functions ///
 
