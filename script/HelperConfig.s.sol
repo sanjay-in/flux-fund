@@ -21,6 +21,14 @@ contract HelperConfig is Script, Parameter {
 
     NetworkConfig public networkConfig;
 
+    ERC20Mock public wethToken;
+    ERC20Mock public wbtcToken;
+    ERC20Mock public linkToken;
+
+    MockV3Aggregator public wethUSDPrice;
+    MockV3Aggregator public wbtcUSDPrice;
+    MockV3Aggregator public linkUSDPrice;
+
     uint8 public constant DECIMALS = 8;
     int256 public constant WETH_USD_PRICE = 3000e8;
     int256 public constant WBTC_USD_PRICE = 100000e8;
@@ -47,13 +55,13 @@ contract HelperConfig is Script, Parameter {
     function foundryConfig() public returns(NetworkConfig memory foundryConfigDetails) {
         vm.startBroadcast();
 
-        MockV3Aggregator wethUSDPrice = new MockV3Aggregator(DECIMALS, WETH_USD_PRICE);
-        MockV3Aggregator wbtcUSDPrice = new MockV3Aggregator(DECIMALS, WBTC_USD_PRICE);
-        MockV3Aggregator linkUSDPrice = new MockV3Aggregator(DECIMALS, LINK_USD_PRICE);
+        wethUSDPrice = new MockV3Aggregator(DECIMALS, WETH_USD_PRICE);
+        wbtcUSDPrice = new MockV3Aggregator(DECIMALS, WBTC_USD_PRICE);
+        linkUSDPrice = new MockV3Aggregator(DECIMALS, LINK_USD_PRICE);
 
-        ERC20Mock wethToken = new ERC20Mock();
-        ERC20Mock wbtcToken = new ERC20Mock();
-        ERC20Mock linkToken = new ERC20Mock();
+        wethToken = new ERC20Mock();
+        wbtcToken = new ERC20Mock();
+        linkToken = new ERC20Mock();
 
         vm.stopBroadcast();
 
