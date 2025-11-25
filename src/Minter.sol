@@ -161,6 +161,14 @@ contract Minter is Ownable {
         return i_dsc;
     }
 
+    /**
+     * @notice Gets main router address
+     * @return address of the router contract
+     */
+    function getMainRouterAddress() external view returns (address) {
+        return s_mainRouter;
+    }
+
 
     /// Setter Functions ///
 
