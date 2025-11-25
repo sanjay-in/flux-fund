@@ -5,11 +5,11 @@ import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {MockV3Aggregator} from "@chainlink/contracts/src/v0.8/tests/MockV3Aggregator.sol";
-import {Router} from "../src/Router.sol";
-import {Deposit} from "../src/Deposit.sol";
-import {Minter} from "../src/Minter.sol";
-import {DecentralizedStableCoin} from "../src/DSC.sol";
-import {DeployRouter} from "../script/DeployRouter.s.sol";
+import {Router} from "../../src/Router.sol";
+import {Deposit} from "../../src/Deposit.sol";
+import {Minter} from "../../src/Minter.sol";
+import {DecentralizedStableCoin} from "../../src/DSC.sol";
+import {DeployRouter} from "../../script/DeployRouter.s.sol";
 
 contract TestDeposit is Test {
     Router public router;

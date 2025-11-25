@@ -2,8 +2,8 @@
 pragma solidity ^0.8.27;
 
 import {Test} from "forge-std/Test.sol";
-import {DeployDSC} from "../script/DeployDSC.t.sol";
-import {DecentralizedStableCoin} from "../src/DSC.sol";
+import {DeployDSC} from "../../script/DeployDSC.t.sol";
+import {DecentralizedStableCoin} from "../../src/DSC.sol";
 
 contract TestDSC is Test {
     DecentralizedStableCoin public dsc;
